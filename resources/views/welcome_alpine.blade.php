@@ -18,7 +18,7 @@
                 </span>
             </h1>
             <div class="grid gap-7 m-3">
-                <div x-data="AlpineUsersTable()" x-init="getUsersFromApi()">
+                <div x-data="AlpineSearch({endpoint: '{{ route('api.users.index') }}'})">
                     <div class="grid grid-cols-3">
                         <div class="col-span-2"></div>
                         <div>
@@ -43,7 +43,7 @@
                         <tbody class="border text-sm">
 
                             {{-- ciclo for --}}
-                            <template x-for="user in users">
+                            <template x-for="user in results">
                                 <tr>
                                     <td class="border p-2" x-text="user.name"></td>
                                     <td class="border p-2" x-text="user.email"></td>
@@ -63,15 +63,29 @@
         </div>
 
     <script>
-        function AlpineUsersTable() {
+        // accetta l'endpoint dell'API come parametro
+        // così facendo, il componente rimane estremamente generico
+        // potresti riutilizzarlo per qualsiasi genere di ricerca, 
+        // non solo gli utenti (es. prodotti, indirizzi...)
+        function AlpineSearch({endpoint}) {
             return {
                 search: "",
-                users: [],
+                results: [],
+                
+                // il metodo init viene chiamato automaticamente,
+                // se non passi niente nell'attributo x-init
+                init() {
+                    // carica tutti i record, senza filtro
+                    this.getResultsFromApi()
+                    
+                    // quando search viene modificato, chiama di nuovo getResultsFromApi
+                    this.$watch('search', (search) => this.getResultsFromApi(search))
+                },
 
-                getUsersFromApi() {
-                    return fetch('/api/users')
+                getResultsFromApi(search = '') {
+                    return fetch(`${endpoint}?search=${search}`)
                         .then(response => response.json())
-                        .then(response => this.users = response.data)
+                        .then(response => this.results = response.data)
                 }
             }
         }
